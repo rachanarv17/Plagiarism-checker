@@ -9,10 +9,14 @@ from fpdf import FPDF
 app = Flask(__name__)
 app.secret_key = 'supersecretkey_change_in_production'
 
-# Database configuration
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///users.db'
+# Use /tmp for Vercel serverless environment (non-persistent)
+is_vercel = os.environ.get('VERCEL') == '1'
+db_path = '/tmp/users.db' if is_vercel else 'users.db'
+upload_path = '/tmp/uploads' if is_vercel else 'uploads'
+
+app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{db_path}'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-app.config['UPLOAD_FOLDER'] = 'uploads'
+app.config['UPLOAD_FOLDER'] = upload_path
 
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
