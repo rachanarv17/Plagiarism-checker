@@ -1,0 +1,10 @@
+flask
+Flask-SQLAlchemy
+beautifulsoup4
+requests
+scikit-learn
+python-docx
+PyPDF2
+duckduckgo-search
+fpdf2
+werkzeug
