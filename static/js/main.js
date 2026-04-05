@@ -107,6 +107,8 @@ document.addEventListener('DOMContentLoaded', () => {
         loadingState.style.display = 'none';
         uploadSection.style.display = 'none';
         resultsSection.style.display = 'block';
+        const stickyAction = document.getElementById('stickyAction');
+        if (stickyAction) stickyAction.style.display = 'block';
 
         const score = data.similarity;
         const scoreText = document.getElementById('scoreText');
@@ -151,29 +153,33 @@ document.addEventListener('DOMContentLoaded', () => {
         // Display phrases
         phrasesList.innerHTML = '';
         if (data.matched_phrases && data.matched_phrases.length > 0) {
-            data.matched_phrases.forEach(item => {
+            data.matched_phrases.forEach((item, index) => {
                 const li = document.createElement('li');
                 li.textContent = item.phrase;
+                li.classList.add('animate-reveal');
+                li.style.setProperty('--delay', `${0.1 * index}s`);
                 phrasesList.appendChild(li);
             });
         } else {
-            phrasesList.innerHTML = '<li>No significant matching phrases found.</li>';
+            phrasesList.innerHTML = '<li class="animate-reveal">No significant matching phrases found.</li>';
         }
 
         // Display URLs
         urlsList.innerHTML = '';
         if (data.source_urls && data.source_urls.length > 0) {
-            data.source_urls.forEach(url => {
+            data.source_urls.forEach((url, index) => {
                 const li = document.createElement('li');
                 const a = document.createElement('a');
                 a.href = url;
                 a.target = '_blank';
                 a.textContent = url;
                 li.appendChild(a);
+                li.classList.add('animate-reveal');
+                li.style.setProperty('--delay', `${0.1 * index}s`);
                 urlsList.appendChild(li);
             });
         } else {
-            urlsList.innerHTML = '<li>No source links found.</li>';
+            urlsList.innerHTML = '<li class="animate-reveal">No source links found.</li>';
         }
     }
 });
