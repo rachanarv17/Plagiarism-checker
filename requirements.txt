@@ -5,3 +5,4 @@ fpdf
 gunicorn
 requests
 wikipedia
+duckduckgo_search
