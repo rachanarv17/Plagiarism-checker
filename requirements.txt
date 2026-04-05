@@ -7,3 +7,4 @@ requests
 wikipedia
 duckduckgo_search
 scikit-learn
+pypdf2
