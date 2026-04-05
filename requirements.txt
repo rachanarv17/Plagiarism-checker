@@ -4,3 +4,4 @@ werkzeug
 fpdf
 gunicorn
 requests
+wikipedia
