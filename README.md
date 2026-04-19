@@ -1,6 +1,6 @@
 <div align="center">
 
-# 🔍 AuthentiCheck
+# 🔍 UniChecker
 ### Intelligent Plagiarism Detection System
 
 *A full-stack document originality verification platform powered by Machine Learning and real-time web analysis.*
@@ -38,9 +38,9 @@
 
 ## 🧭 Overview
 
-**AuthentiCheck** is a production-grade, full-stack plagiarism detection web application. It extracts text from uploaded documents and intelligently cross-references content against live web sources using a parallelized NLP pipeline — delivering fast, accurate, and readable originality scores through a premium dark-mode UI.
+**UniChecker** is a production-grade, full-stack plagiarism detection web application. It extracts text from uploaded documents and intelligently cross-references content against live web sources using a parallelized NLP pipeline — delivering fast, accurate, and readable originality scores through a premium dark-mode UI.
 
-Whether you're an **academic**, **content creator**, or **developer**, AuthentiCheck provides the transparency and depth you need to ensure document integrity.
+Whether you're an **academic**, **content creator**, or **developer**, UniChecker provides the transparency and depth you need to ensure document integrity.
 
 ---
 
