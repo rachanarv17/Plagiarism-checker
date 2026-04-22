@@ -90,7 +90,7 @@ def calculate_similarity(doc_text, web_text):
         vectorizer = TfidfVectorizer(stop_words='english', ngram_range=(1, 2))
         tfidf_matrix = vectorizer.fit_transform([doc_text, web_text])
         sim_score = cosine_similarity(tfidf_matrix[0:1], tfidf_matrix[1:2])[0][0]
-        return round(sim_score * 100, 2)
+        return float(round(sim_score * 100, 2))
     except:
         return 0.0
 
@@ -137,7 +137,7 @@ def process_document(file_path):
     final_score = (max(overall_similarity, highest_site_similarity) * 0.75) + (phrase_match_ratio * 0.25)
 
     return {
-        "similarity": min(100.0, round(final_score, 2)),
+        "similarity": float(min(100.0, round(final_score, 2))),
         "matched_phrases": matched_phrases,
         "source_urls": urls_to_scrape,
         "message": "Ultra-fast precision scan completed."

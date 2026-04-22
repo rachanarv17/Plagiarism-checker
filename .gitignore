@@ -4,3 +4,9 @@ __pycache__/
 instance/
 uploads/
 .env
+users.db
+check_db.py
+check_tables.py
+fix_db.py
+fix_db_final.py
+migrate_db.py

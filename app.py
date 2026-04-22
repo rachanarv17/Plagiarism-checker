@@ -1,6 +1,7 @@
 import os
 import uuid
 import re
+import json
 from flask import Flask, render_template, request, jsonify, session, redirect, url_for, send_file
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_sqlalchemy import SQLAlchemy
@@ -26,7 +27,18 @@ db = SQLAlchemy(app)
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(80), unique=True, nullable=False)
+    email = db.Column(db.String(120), unique=True, nullable=True)
+    full_name = db.Column(db.String(100), nullable=True)
     password = db.Column(db.String(200), nullable=False)
+    scans = db.relationship('Scan', backref='user', lazy=True)
+
+class Scan(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    filename = db.Column(db.String(150), nullable=False)
+    similarity = db.Column(db.Float, nullable=False)
+    timestamp = db.Column(db.DateTime, server_default=db.func.now())
+    results_json = db.Column(db.Text, nullable=True) # Storing full JSON results
 
 with app.app_context():
     db.create_all()
@@ -41,7 +53,13 @@ def clean_pdf_text(text):
 def index():
     if 'user_id' not in session:
         return redirect(url_for('login'))
-    return render_template('index.html', username=session.get('username'))
+    user = User.query.get(session['user_id'])
+    from flask import make_response
+    response = make_response(render_template('index.html', user=user, username=user.username))
+    response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+    response.headers['Pragma'] = 'no-cache'
+    response.headers['Expires'] = '0'
+    return response
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -97,9 +115,92 @@ def scan_document():
         file.save(filepath)
         results = process_document(filepath)
         session['last_results'] = results
+        
+        # Save to history
+        try:
+            new_scan = Scan(
+                user_id=session['user_id'],
+                filename=file.filename,
+                similarity=results.get('similarity', 0),
+                results_json=json.dumps(results)
+            )
+            db.session.add(new_scan)
+            db.session.commit()
+        except Exception as e:
+            print(f"Error saving scan to DB: {e}")
+            db.session.rollback()
+
         try: os.remove(filepath)
         except: pass
         return jsonify(results)
+
+@app.route('/api/history', methods=['GET'])
+def get_history():
+    if 'user_id' not in session:
+        return jsonify({"error": "Unauthorized"}), 401
+    
+    scans = Scan.query.filter_by(user_id=session['user_id']).order_by(Scan.timestamp.desc()).all()
+    history = [{
+        "id": s.id,
+        "filename": s.filename,
+        "similarity": s.similarity,
+        "timestamp": s.timestamp.strftime("%Y-%m-%d %H:%M:%S")
+    } for s in scans]
+    
+    return jsonify(history)
+
+@app.route('/api/analytics', methods=['GET'])
+def get_analytics():
+    if 'user_id' not in session:
+        return jsonify({"error": "Unauthorized"}), 401
+    
+    scans = Scan.query.filter_by(user_id=session['user_id']).all()
+    if not scans:
+        return jsonify({"total_scans": 0, "avg_similarity": 0, "high_risk_scans": 0})
+    
+    total = len(scans)
+    avg_sim = sum(s.similarity for s in scans) / total
+    high_risk = len([s for s in scans if s.similarity > 40])
+    
+    # Get last 7 days trends
+    return jsonify({
+        "total_scans": total,
+        "avg_similarity": round(avg_sim, 2),
+        "high_risk_scans": high_risk
+    })
+
+@app.route('/api/update-profile', methods=['POST'])
+def update_profile():
+    if 'user_id' not in session:
+        return jsonify({"error": "Unauthorized"}), 401
+    
+    data = request.json
+    new_password = data.get('newPassword')
+    email = data.get('email')
+    full_name = data.get('fullName')
+    
+    user = User.query.get(session['user_id'])
+    if not user:
+        return jsonify({"error": "User not found"}), 404
+
+    if email:
+        user.email = email
+    if full_name:
+        user.full_name = full_name
+    if new_password and len(new_password) >= 6:
+        user.password = generate_password_hash(new_password)
+    
+    db.session.commit()
+    return jsonify({"message": "Profile updated successfully"})
+
+@app.route('/api/clear-history', methods=['POST'])
+def clear_history():
+    if 'user_id' not in session:
+        return jsonify({"error": "Unauthorized"}), 401
+    
+    Scan.query.filter_by(user_id=session['user_id']).delete()
+    db.session.commit()
+    return jsonify({"message": "History cleared successfully"})
 
 @app.route('/report', methods=['GET'])
 def download_report():
@@ -160,5 +261,22 @@ def download_report():
 import os
 
 if __name__ == '__main__':
+    import socket
+    def get_ip():
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        try:
+            s.connect(('10.255.255.255', 1))
+            IP = s.getsockname()[0]
+        except Exception:
+            IP = '127.0.0.1'
+        finally:
+            s.close()
+        return IP
+
     port = int(os.environ.get("PORT", 10000))
+    local_ip = get_ip()
+    print(f"\n* Project is accessible on your WiFi network at:")
+    print(f"* http://{local_ip}:{port}")
+    print(f"* http://localhost:{port}\n")
+    
     app.run(host='0.0.0.0', port=port)
