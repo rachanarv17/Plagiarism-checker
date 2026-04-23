@@ -61,7 +61,7 @@
 
 <body data-app-version="1.0.4-PRO">
     <div style="background: var(--primary-color); color: white; text-align: center; padding: 10px; font-weight: bold; position: sticky; top: 0; z-index: 9999;">
-        🚀 UniChecker v1.0.4 - Premium Dashboard Active
+        🚀 UniChecker v1.0.5 - Theme & Profile Support Active
     </div>
     <!-- Version Marker: 1.0.4-PRO -->
     <div class="bg-decoration">
@@ -115,8 +115,12 @@
             <header class="top-bar">
                 <div class="user-profile-menu" id="userMenu">
                     <div class="user-info-trigger" onclick="toggleUserMenu()">
-                        <div class="avatar">
-                            {{ username[0].upper() if username else 'U' }}
+                        <div class="avatar" id="topAvatar">
+                            {% if user.profile_pic %}
+                                <img src="{{ url_for('get_avatar', filename=user.profile_pic) }}" alt="Profile" style="width: 100%; height: 100%; border-radius: 14px; object-fit: cover;">
+                            {% else %}
+                                {{ username[0].upper() if username else 'U' }}
+                            {% endif %}
                         </div>
                         <span class="username-text">{{ username }}</span>
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"></path></svg>
@@ -170,8 +174,16 @@
 
                 <div class="history-section" id="historySection" style="display: none;">
                     <div class="results-header">
-                        <h2>Scan History</h2>
-                        <p>View your past plagiarism checks and reports.</p>
+                        <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                            <div>
+                                <h2>Scan History</h2>
+                                <p>View your past plagiarism checks and reports.</p>
+                            </div>
+                            <button class="btn-outline text-danger" id="clearHistoryBtn" style="border-color: var(--danger-color); color: var(--danger-color); display: flex; align-items: center; gap: 8px;">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
+                                Clear History
+                            </button>
+                        </div>
                     </div>
                     <div class="history-list glass-panel" id="historyList">
                         <div class="loading-state">Loading history...</div>
@@ -206,6 +218,22 @@
                     </div>
                     <div class="settings-card glass-panel">
                         <div class="settings-form" id="profileForm">
+                            <div class="setting-item" style="display: flex; align-items: center; gap: 2rem; margin-bottom: 2.5rem;">
+                                <div class="avatar" id="settingsAvatar" style="width: 100px; height: 100px; font-size: 2rem;">
+                                    {% if user.profile_pic %}
+                                        <img src="{{ url_for('get_avatar', filename=user.profile_pic) }}" alt="Profile" style="width: 100%; height: 100%; border-radius: 14px; object-fit: cover;">
+                                    {% else %}
+                                        {{ username[0].upper() if username else 'U' }}
+                                    {% endif %}
+                                </div>
+                                <div style="flex: 1;">
+                                    <label>Profile Picture</label>
+                                    <p class="text-muted" style="font-size: 0.8rem; margin-bottom: 1rem;">Upload a new profile picture (JPG, PNG)</p>
+                                    <input type="file" id="avatarInput" accept="image/*" style="display: none;">
+                                    <button type="button" class="btn-outline" onclick="document.getElementById('avatarInput').click()">Choose Image</button>
+                                </div>
+                            </div>
+
                             <div class="setting-item">
                                 <label>Username</label>
                                 <input type="text" value="{{ username }}" disabled class="glass-input" style="opacity: 0.7; cursor: not-allowed;">
@@ -222,6 +250,23 @@
                             </div>
                             
                             <div class="setting-divider"></div>
+                            
+                            <h3>Appearance</h3>
+                            <p class="text-muted" style="margin-bottom: 1.5rem;">Choose your preferred dashboard theme</p>
+                            
+                            <div class="theme-switch-container" style="display: flex; gap: 1.5rem; margin-bottom: 2.5rem;">
+                                <div class="theme-option" id="darkTheme" onclick="setTheme('dark')" style="flex: 1; padding: 1.5rem; border-radius: 20px; border: 2px solid var(--primary-color); cursor: pointer; text-align: center; background: rgba(0, 242, 254, 0.05); transition: all 0.3s;">
+                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="margin-bottom: 0.75rem; color: var(--primary-color);"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+                                    <div style="font-weight: 700; font-size: 0.9rem;">Dark Mode</div>
+                                </div>
+                                <div class="theme-option" id="lightTheme" onclick="setTheme('light')" style="flex: 1; padding: 1.5rem; border-radius: 20px; border: 2px solid var(--glass-border); cursor: pointer; text-align: center; transition: all 0.3s;">
+                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="margin-bottom: 0.75rem; color: var(--text-muted);"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
+                                    <div style="font-weight: 700; font-size: 0.9rem; color: var(--text-muted);">Light Mode</div>
+                                </div>
+                            </div>
+
+                            <div class="setting-divider"></div>
+
                             
                             <h3>Security</h3>
                             <p class="text-muted" style="margin-bottom: 1.5rem;">Update your account password</p>
@@ -339,7 +384,7 @@
         </div>
     </footer>
 
-    <script src="{{ url_for('static', filename='js/main.js') }}?v=1.0.5"></script>
+    <script src="{{ url_for('static', filename='js/main.js') }}?v=1.0.7"></script>
 </body>
 
 </html>

@@ -17,10 +17,14 @@ document.addEventListener('DOMContentLoaded', () => {
             try {
                 const response = await fetch('/api/history');
                 const data = await response.json();
+                const clearBtn = document.getElementById('clearHistoryBtn');
+                
                 if (!Array.isArray(data) || data.length === 0) {
                     historyList.innerHTML = '<div class="empty-state"><p class="text-muted">No scan history found.</p></div>';
+                    if (clearBtn) clearBtn.style.display = 'none';
                     return;
                 }
+                if (clearBtn) clearBtn.style.display = 'flex';
                 historyList.innerHTML = `
                     <table class="history-table">
                         <thead><tr><th>File Name</th><th>Similarity</th><th>Date</th></tr></thead>
@@ -163,5 +167,119 @@ document.addEventListener('DOMContentLoaded', () => {
                 msgDiv.style.display = "block";
             }
         });
+    }
+
+    // Clear History Logic
+    const clearHistoryBtn = document.getElementById('clearHistoryBtn');
+    if (clearHistoryBtn) {
+        clearHistoryBtn.addEventListener('click', async () => {
+            if (!confirm('Are you sure you want to clear all scan history? This action cannot be undone.')) {
+                return;
+            }
+            
+            try {
+                const response = await fetch('/api/clear-history', { method: 'POST' });
+                const data = await response.json();
+                if (response.ok) {
+                    if (window.appState && window.appState.fetchHistory) {
+                        window.appState.fetchHistory();
+                    }
+                    if (window.appState && window.appState.fetchAnalytics) {
+                        window.appState.fetchAnalytics();
+                    }
+                } else {
+                    alert('Error: ' + (data.error || 'Failed to clear history'));
+                }
+            } catch (error) {
+                alert('An error occurred while clearing history.');
+            }
+        });
+    }
+
+    // Profile Picture Upload Logic
+    const avatarInput = document.getElementById('avatarInput');
+    if (avatarInput) {
+        avatarInput.addEventListener('change', async () => {
+            if (!avatarInput.files || avatarInput.files.length === 0) return;
+            
+            const file = avatarInput.files[0];
+            const formData = new FormData();
+            formData.append('avatar', file);
+            
+            try {
+                const response = await fetch('/api/upload-avatar', {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await response.json();
+                
+                if (response.ok) {
+                    const avatarUrl = data.url;
+                    // Update both avatars on the page
+                    ['topAvatar', 'settingsAvatar'].forEach(id => {
+                        const el = document.getElementById(id);
+                        if (el) {
+                            el.innerHTML = `<img src="${avatarUrl}" alt="Profile" style="width: 100%; height: 100%; border-radius: 14px; object-fit: cover;">`;
+                        }
+                    });
+                } else {
+                    alert('Upload Error: ' + (data.error || 'Failed to upload avatar'));
+                }
+            } catch (error) {
+                alert('An error occurred during upload.');
+            }
+        });
+    }
+
+    // Theme Switcher Logic
+    window.setTheme = (theme) => {
+        const darkOpt = document.getElementById('darkTheme');
+        const lightOpt = document.getElementById('lightTheme');
+        
+        if (theme === 'light') {
+            document.body.classList.add('light-theme');
+            localStorage.setItem('theme', 'light');
+            if (lightOpt) {
+                lightOpt.style.borderColor = 'var(--primary-color)';
+                lightOpt.style.background = 'rgba(0, 242, 254, 0.05)';
+                const label = lightOpt.querySelector('div');
+                const svg = lightOpt.querySelector('svg');
+                if (label) label.style.color = 'var(--text-color)';
+                if (svg) svg.style.color = 'var(--primary-color)';
+            }
+            if (darkOpt) {
+                darkOpt.style.borderColor = 'var(--glass-border)';
+                darkOpt.style.background = 'transparent';
+                const label = darkOpt.querySelector('div');
+                const svg = darkOpt.querySelector('svg');
+                if (label) label.style.color = 'var(--text-muted)';
+                if (svg) svg.style.color = 'var(--text-muted)';
+            }
+        } else {
+            document.body.classList.remove('light-theme');
+            localStorage.setItem('theme', 'dark');
+            if (darkOpt) {
+                darkOpt.style.borderColor = 'var(--primary-color)';
+                darkOpt.style.background = 'rgba(0, 242, 254, 0.05)';
+                const label = darkOpt.querySelector('div');
+                const svg = darkOpt.querySelector('svg');
+                if (label) label.style.color = 'var(--text-color)';
+                if (svg) svg.style.color = 'var(--primary-color)';
+            }
+            if (lightOpt) {
+                lightOpt.style.borderColor = 'var(--glass-border)';
+                lightOpt.style.background = 'transparent';
+                const label = lightOpt.querySelector('div');
+                const svg = lightOpt.querySelector('svg');
+                if (label) label.style.color = 'var(--text-muted)';
+                if (svg) svg.style.color = 'var(--text-muted)';
+            }
+        }
+    };
+
+    // Initialize Theme
+    const savedTheme = localStorage.getItem('theme');
+    if (savedTheme === 'light') {
+        window.setTheme('light');
     }
 });

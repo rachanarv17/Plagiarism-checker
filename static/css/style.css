@@ -16,6 +16,34 @@
     --font-heading: 'Outfit', sans-serif;
 }
 
+body.light-theme {
+    --bg-color: #f8fafc;
+    --card-bg: rgba(255, 255, 255, 0.8);
+    --text-color: #0f172a;
+    --text-muted: #64748b;
+    --border-color: rgba(0, 0, 0, 0.1);
+    --glass-border: rgba(0, 0, 0, 0.05);
+    --glow-primary: rgba(0, 242, 254, 0.2);
+    --glow-secondary: rgba(124, 58, 237, 0.2);
+}
+
+body.light-theme .bg-decoration {
+    background: radial-gradient(circle at 50% 50%, #f1f5f9 0%, #f8fafc 100%);
+}
+
+body.light-theme .blob {
+    opacity: 0.1;
+}
+
+body.light-theme .top-bar {
+    background: rgba(255, 255, 255, 0.5);
+}
+
+body.light-theme .sidebar {
+    background: rgba(255, 255, 255, 0.8);
+}
+
+
 * {
     margin: 0;
     padding: 0;

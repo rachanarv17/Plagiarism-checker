@@ -21,6 +21,10 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['UPLOAD_FOLDER'] = upload_path
 
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+PROFILE_FOLDER = os.path.join(app.config['UPLOAD_FOLDER'], 'profiles')
+os.makedirs(PROFILE_FOLDER, exist_ok=True)
+app.config['PROFILE_FOLDER'] = PROFILE_FOLDER
+
 
 db = SQLAlchemy(app)
 
@@ -30,6 +34,7 @@ class User(db.Model):
     email = db.Column(db.String(120), unique=True, nullable=True)
     full_name = db.Column(db.String(100), nullable=True)
     password = db.Column(db.String(200), nullable=False)
+    profile_pic = db.Column(db.String(255), nullable=True)
     scans = db.relationship('Scan', backref='user', lazy=True)
 
 class Scan(db.Model):
@@ -201,6 +206,41 @@ def clear_history():
     Scan.query.filter_by(user_id=session['user_id']).delete()
     db.session.commit()
     return jsonify({"message": "History cleared successfully"})
+
+@app.route('/api/upload-avatar', methods=['POST'])
+def upload_avatar():
+    if 'user_id' not in session:
+        return jsonify({"error": "Unauthorized"}), 401
+    
+    if 'avatar' not in request.files:
+        return jsonify({"error": "No image uploaded"}), 400
+    
+    file = request.files['avatar']
+    if file.filename == '':
+        return jsonify({"error": "No selected file"}), 400
+    
+    if file:
+        user = User.query.get(session['user_id'])
+        # Delete old avatar if exists
+        if user.profile_pic:
+            old_path = os.path.join(app.config['PROFILE_FOLDER'], user.profile_pic)
+            if os.path.exists(old_path):
+                try: os.remove(old_path)
+                except: pass
+        
+        filename = f"avatar_{user.id}_{uuid.uuid4().hex[:8]}{os.path.splitext(file.filename)[1]}"
+        filepath = os.path.join(app.config['PROFILE_FOLDER'], filename)
+        file.save(filepath)
+        
+        user.profile_pic = filename
+        db.session.commit()
+        
+        return jsonify({"message": "Avatar updated", "url": url_for('get_avatar', filename=filename)})
+
+@app.route('/uploads/profiles/<filename>')
+def get_avatar(filename):
+    return send_file(os.path.join(app.config['PROFILE_FOLDER'], filename))
+
 
 @app.route('/report', methods=['GET'])
 def download_report():
