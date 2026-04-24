@@ -6,8 +6,6 @@ import time
 import wikipedia
 from bs4 import BeautifulSoup
 from duckduckgo_search import DDGS
-from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.metrics.pairwise import cosine_similarity
 import PyPDF2
 import docx
 from concurrent.futures import ThreadPoolExecutor
@@ -17,6 +15,9 @@ from groq import Groq
 # Setup Groq API
 GROQ_API_KEY = os.environ.get("GROQ_API_KEY")
 client = Groq(api_key=GROQ_API_KEY) if GROQ_API_KEY else None
+
+from src.model import PlagiarismModel
+sbert_model = PlagiarismModel()
 
 # Common phrases/stop-sentences to ignore in search
 COMMON_BLOCKS = {
@@ -93,11 +94,11 @@ def calculate_similarity(doc_text, web_text):
     if not doc_text or not web_text:
         return 0.0
     try:
-        vectorizer = TfidfVectorizer(stop_words='english', ngram_range=(1, 2))
-        tfidf_matrix = vectorizer.fit_transform([doc_text, web_text])
-        sim_score = cosine_similarity(tfidf_matrix[0:1], tfidf_matrix[1:2])[0][0]
-        return float(round(sim_score * 100, 2))
-    except:
+        # Use new SBERT + ML architecture instead of TF-IDF
+        result = sbert_model.predict_plagiarism(doc_text, web_text)
+        return float(result['similarity_score'])
+    except Exception as e:
+        print(f"SBERT Error: {e}")
         return 0.0
 
 def generate_ai_analysis(doc_text, web_text, matched_urls):
