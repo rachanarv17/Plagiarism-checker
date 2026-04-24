@@ -1,3 +1,5 @@
+from dotenv import load_dotenv
+load_dotenv()
 import os
 import random
 import requests
@@ -16,7 +18,17 @@ from groq import Groq
 # Setup Groq API
 GROQ_API_KEY = os.environ.get("GROQ_API_KEY")
 client = Groq(api_key=GROQ_API_KEY) if GROQ_API_KEY else None
+if client:
+    response = client.chat.completions.create(
+        model="llama-3.3-70b-versatile",
+        messages=[
+            {"role": "user", "content": "Explain plagiarism risk in simple terms"}
+        ]
+    )
 
+    print(response.choices[0].message.content)
+else:
+    print("Groq API key not set")
 from src.model import PlagiarismModel
 sbert_model = PlagiarismModel()
 
