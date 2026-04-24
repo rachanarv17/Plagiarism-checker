@@ -11,6 +11,12 @@ from sklearn.metrics.pairwise import cosine_similarity
 import PyPDF2
 import docx
 from concurrent.futures import ThreadPoolExecutor
+import os
+from groq import Groq
+
+# Setup Groq API
+GROQ_API_KEY = os.environ.get("GROQ_API_KEY")
+client = Groq(api_key=GROQ_API_KEY) if GROQ_API_KEY else None
 
 # Common phrases/stop-sentences to ignore in search
 COMMON_BLOCKS = {
@@ -94,6 +100,38 @@ def calculate_similarity(doc_text, web_text):
     except:
         return 0.0
 
+def generate_ai_analysis(doc_text, web_text, matched_urls):
+    if not client:
+        return "AI analysis is disabled. Please check your GROQ_API_KEY."
+    
+    try:
+        prompt = f"""
+        Act as an expert plagiarism checker. 
+        Analyze the following document for potential plagiarism against the provided web sources.
+        
+        Document excerpt:
+        {doc_text[:3000]}
+        
+        Web source excerpt:
+        {web_text[:3000]}
+        
+        Matched URLs: {matched_urls}
+        
+        Provide a concise real-time analysis report (max 3 sentences) on whether this looks like genuine original work, paraphrased content, or direct plagiarism.
+        """
+        chat_completion = client.chat.completions.create(
+            messages=[
+                {
+                    "role": "user",
+                    "content": prompt,
+                }
+            ],
+            model="llama3-8b-8192",
+        )
+        return chat_completion.choices[0].message.content.strip()
+    except Exception as e:
+        return f"AI analysis failed: {str(e)}"
+
 def process_document(file_path):
     doc_text = extract_text_from_file(file_path)
     if not doc_text or len(doc_text.split()) < 5:
@@ -136,9 +174,16 @@ def process_document(file_path):
     phrase_match_ratio = (len(matched_phrases) / len(phrases)) * 100 if phrases else 0
     final_score = (max(overall_similarity, highest_site_similarity) * 0.75) + (phrase_match_ratio * 0.25)
 
+    ai_report = ""
+    if combined_web_text:
+        ai_report = generate_ai_analysis(doc_text, combined_web_text, urls_to_scrape)
+    else:
+        ai_report = "No web sources found to compare against. Document appears to be original."
+
     return {
         "similarity": float(min(100.0, round(final_score, 2))),
         "matched_phrases": matched_phrases,
         "source_urls": urls_to_scrape,
-        "message": "Ultra-fast precision scan completed."
+        "message": "Ultra-fast precision scan completed.",
+        "ai_analysis": ai_report
     }

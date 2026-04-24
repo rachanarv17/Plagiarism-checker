@@ -5,6 +5,10 @@ import json
 from flask import Flask, render_template, request, jsonify, session, redirect, url_for, send_file
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_sqlalchemy import SQLAlchemy
+from dotenv import load_dotenv
+
+load_dotenv()
+
 from plagiarism_checker import process_document
 from fpdf import FPDF
 

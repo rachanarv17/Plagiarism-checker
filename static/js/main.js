@@ -124,6 +124,11 @@ document.addEventListener('DOMContentLoaded', () => {
             phrasesList.innerHTML = (data.matched_phrases || []).map(p => `<li>${p.phrase}</li>`).join('') || '<li>No matches found.</li>';
         }
 
+        const aiAnalysisText = document.getElementById('aiAnalysisText');
+        if (aiAnalysisText) {
+            aiAnalysisText.textContent = data.ai_analysis || "No AI analysis available.";
+        }
+
         const urlsList = document.getElementById('urlsList');
         if (urlsList) {
             urlsList.innerHTML = (data.source_urls || []).map(u => `<li><a href="${u}" target="_blank">${u}</a></li>`).join('') || '<li>No sources found.</li>';
